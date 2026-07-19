@@ -12,18 +12,25 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var cachedSecret []byte
+
 func jwtSecret() []byte {
+	if cachedSecret != nil {
+		return cachedSecret
+	}
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		b := make([]byte, 32)
 		if _, err := rand.Read(b); err != nil {
 			log.Printf("FATAL: cannot generate JWT secret: %v", err)
-			return []byte("fallback-unsafe-key-change-me")
+			cachedSecret = []byte("fallback-unsafe-key-change-me")
+			return cachedSecret
 		}
 		secret = hex.EncodeToString(b)
 		log.Printf("WARNING: JWT_SECRET not set, generated random key. All tokens invalid on restart.")
 	}
-	return []byte(secret)
+	cachedSecret = []byte(secret)
+	return cachedSecret
 }
 
 type Claims struct {
